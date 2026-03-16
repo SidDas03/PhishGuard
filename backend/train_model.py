@@ -20,11 +20,6 @@ import joblib
 
 from feature_extractor import extract_features, FEATURE_NAMES, feature_vector
 
-# ═══════════════════════════════════════════════════════
-#  REAL URL TRAINING DATA
-#  Carefully curated to represent actual phishing patterns
-# ═══════════════════════════════════════════════════════
-
 LEGIT_URLS = [
     # Major tech
     "https://www.google.com",
@@ -148,7 +143,6 @@ LEGIT_URLS = [
 ]
 
 PHISHING_URLS = [
-    # Path-based brand impersonation (CRITICAL category — high FP in old code)
     "https://mail.printakid.com/www.online.americanexpress.com/index.html",
     "http://malware.evil.tk/www.paypal.com/login",
     "https://free-prize.ru/www.amazon.com/verify",
@@ -159,7 +153,6 @@ PHISHING_URLS = [
     "http://click.ad.tk/www.chase.com/secure/dashboard",
     "https://promo.scam.gq/www.microsoft.com/office365/login",
     "http://free.gift.cf/www.google.com/accounts/signin",
-    # Subdomain-based brand impersonation
     "https://paypal.com.verify-account.xyz/signin",
     "https://amazon.com.customer-service.tk/account",
     "https://google.com.security-alert.online/verify",
@@ -172,7 +165,6 @@ PHISHING_URLS = [
     "https://amazon.security.verify.gq/account",
     "https://accounts-google-com.verify-login.tk/signin",
     "https://login.secure-paypal.xyz/authenticate",
-    # Typosquatting
     "http://paypa1-login.verify.tk/account",
     "https://micosoft-account.online/verify",
     "https://arnazon.shop/deals/login",
@@ -188,14 +180,12 @@ PHISHING_URLS = [
     "https://instaqram.tk/account",
     "https://microsft-office.online/login",
     "http://yah00-mail.tk/signin",
-    # IP address as domain
     "http://192.168.1.1/admin/login.php",
     "http://10.0.0.1/phishing/paypal.html",
     "https://85.132.45.22/secure/update",
     "http://198.51.100.5/amazon/login",
     "http://203.0.113.45/bank/signin",
     "http://172.16.0.1/microsoft/account",
-    # Suspicious TLDs with phishing patterns
     "https://secure-paypal-login.xyz/signin",
     "https://account-verify-amazon.online/confirm",
     "http://microsoft-account-verify.site/update",
@@ -210,7 +200,6 @@ PHISHING_URLS = [
     "http://bitcoin-wallet-secure.site/recover",
     "https://nft-airdrop-claim.online/connect",
     "https://crypto-bonus-2024.club/claim",
-    # Credential harvesting patterns  
     "http://paypal-update-account.xyz/verify/account/billing",
     "https://secure-bank-login.gq/login/verify/confirm",
     "http://account-suspended-verify.tk/confirm/billing/update",
@@ -219,25 +208,20 @@ PHISHING_URLS = [
     "https://verify-your-identity-now.online/step1/personal",
     "http://unusual-activity-detected.site/secure/verify",
     "https://confirm-your-payment-method.top/billing/update",
-    # Long obfuscated URLs
     "http://verify.secure.update.confirm.account.suspended.limited.xyz/login",
     "https://account-verify-billing-update-confirm-secure.online/paypal/signin",
     "http://secure-login-verify-account-suspended-recover-billing.cf/bank",
     "https://amazon-prime-member-account-billing-update-required.online/login",
-    # Redirect / open redirect tricks
     "http://malicious.tk/redirect?url=https://paypal.com@evil.tk/login",
     "https://phishing.cf/goto?next=https://bankofamerica.com.evil.ml/signin",
     "http://spam.gq/?url=https://google.com.login.evil.tk/account",
-    # @ symbol tricks
     "http://user@paypal.com@evil.tk/login",
     "https://admin@google.com@phishing.xyz/signin",
-    # Brand in path — various
     "http://evil.tk/paypal.com/login/confirm",
     "https://scam.ml/secure/bankofamerica.com/signin",
     "http://phish.cf/secure/chase.com/dashboard",
     "https://hack.ga/www.amazon.com/account/billing",
     "http://spam.gq/update/apple.com/id/signin",
-    # Mixed patterns
     "https://login-secure.verify-account.billing-update.xyz/paypal",
     "http://secure.account.billing.paypal.verify.tk/confirm",
     "https://my-account-suspended-restore.online/verify",
@@ -248,15 +232,13 @@ PHISHING_URLS = [
     "http://your-payment-failed-update.ml/billing/update",
     "https://account-closure-notice.cf/save-account/verify",
     "http://verify-age-to-continue.xyz/id-check",
-    # Homograph / Unicode
-    "https://раyраl.com/login",  # Cyrillic look-alikes
-    "http://gооgle.com/signin",   # Cyrillic o
-    "https://rnicrosoft.com/account",  # rn looks like m
-    "https://arnazon.corn/order",  # rn→m, .corn
-    # More realistic phishing patterns seen in the wild
+    "https://раyраl.com/login",  
+    "http://gооgle.com/signin",   
+    "https://rnicrosoft.com/account", 
+    "https://arnazon.corn/order", 
     "https://cutt.ly/secure-bank-verify",
     "http://bit.do/paypal-update",
-    "https://tinyurl.com/3xk5f7h2",  # URL shorteners hiding phishing
+    "https://tinyurl.com/3xk5f7h2", 
     "http://t.co/phishinglink123",
     "https://ow.ly/maliciouslink",
 ]
@@ -301,12 +283,9 @@ def augment_dataset(X, y, multiplier=15):
     def augment_class(samples, n_target, label):
         aug = list(samples)
         while len(aug) < n_target:
-            # Pick a random real sample
-            base = samples[np.random.randint(len(samples))].copy()
-            # Add small Gaussian noise scaled to feature variance
+            base = samples[np.random.randint(len(samples))].copy()ce
             noise_scale = np.std(samples, axis=0) * 0.15
             noise_scale = np.where(noise_scale < 0.01, 0.01, noise_scale)
-            # Don't add noise to binary features
             binary_features = [2,4,5,6,7,8,14,18,19,20,26,30,31]  # indices of binary features
             noise = np.random.normal(0, noise_scale)
             for idx in binary_features:
@@ -332,20 +311,16 @@ def train():
     print("="*60)
     print("PhishGuard ML Model Training")
     print("="*60)
-    
-    # Build from real URLs
+
     X_real, y_real = build_dataset()
     print(f"\nReal URLs: {len(y_real)} total ({(y_real==0).sum()} legit, {(y_real==1).sum()} phishing)")
-    
-    # Augment to 3000 per class
+
     X, y = augment_dataset(X_real, y_real, multiplier=20)
     print(f"After augmentation: {len(y)} total ({(y==0).sum()} legit, {(y==1).sum()} phishing)")
-    
-    # Scale
+
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-    
-    # Train ensemble: Random Forest + Gradient Boosting
+
     print("\nTraining Random Forest...")
     rf = RandomForestClassifier(
         n_estimators=500,
@@ -368,8 +343,7 @@ def train():
         random_state=42
     )
     gb.fit(X_scaled, y)
-    
-    # Cross-validation on real data only
+
     print("\nCross-validation on real URLs...")
     X_real_scaled = scaler.transform(X_real)
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
@@ -378,28 +352,24 @@ def train():
     gb_scores = cross_val_score(gb, X_real_scaled, y_real, cv=cv, scoring='f1')
     print(f"  RF  F1: {rf_scores.mean():.3f} ± {rf_scores.std():.3f}")
     print(f"  GB  F1: {gb_scores.mean():.3f} ± {gb_scores.std():.3f}")
-    
-    # Print feature importance
+
     importance = sorted(zip(FEATURE_NAMES, rf.feature_importances_), 
                        key=lambda x: x[1], reverse=True)
     print("\nTop 10 most important features:")
     for name, imp in importance[:10]:
         bar = "█" * int(imp * 200)
         print(f"  {name:<35} {imp:.4f} {bar}")
-    
-    # Save
+
     os.makedirs("/home/claude/phishguard/models", exist_ok=True)
     joblib.dump(rf, "/home/claude/phishguard/models/rf_model.joblib")
     joblib.dump(gb, "/home/claude/phishguard/models/gb_model.joblib")
     joblib.dump(scaler, "/home/claude/phishguard/models/scaler.joblib")
-    
-    # Save feature names for validation
+
     with open("/home/claude/phishguard/models/feature_names.json", "w") as f:
         json.dump(FEATURE_NAMES, f)
     
     print("\nModels saved.")
     
-    # Final test on specific problem cases
     print("\n" + "="*60)
     print("VALIDATION — Problem Cases")
     print("="*60)
