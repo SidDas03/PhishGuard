@@ -10,7 +10,6 @@ from feature_extractor import (
     PHISHING_TLDS, TOP_DOMAINS, LEGIT_TLDS
 )
 
-# Real brand domains — never flag these as suspicious
 REAL_BRAND_DOMAINS = {
     "google","youtube","gmail","googlemail",
     "microsoft","office","outlook","live","hotmail","msn","bing","skype","xbox","linkedin",
@@ -93,40 +92,30 @@ class URLAnalyzer:
         # Extract full feature set
         feats = extract_features(url)
 
-        # Is this a real brand domain? If so, skip most checks
+
         is_real_brand = domain in REAL_BRAND_DOMAINS
         trusted_tld   = tld in TRUSTED_TLDS
-
-        # ── CHECK 1: IP address as domain ──
         if feats["is_domain_ip"]:
             findings.append({"flagged":True,"check":"IP Address as Domain",
                 "detail":f"Raw IP {host} used instead of a domain name — very suspicious",
                 "severity":35})
             score += 35
-
-        # ── CHECK 2: Phishing TLD ──
         if feats["tld_is_phishing"] and not is_real_brand:
             findings.append({"flagged":True,"check":"High-Risk TLD",
                 "detail":f"TLD '.{tld}' is in the top abused free/cheap TLDs for phishing",
                 "severity":20})
             score += 20
-
-        # ── CHECK 3: Brand similarity (typosquatting / leet) ──
         if feats["brand_similarity_score"] >= 0.8 and not is_real_brand:
             sim = feats["brand_similarity_score"]
             findings.append({"flagged":True,"check":"Brand Spoofing / Typosquatting",
                 "detail":f"Domain '{domain}' closely resembles a known brand (similarity: {sim:.0%})",
                 "severity":40})
             score += 40
-
-        # ── CHECK 4: Brand in URL path (path-based impersonation) ──
         if feats["has_brand_in_path"] and not is_real_brand:
             findings.append({"flagged":True,"check":"Brand Domain in URL Path",
                 "detail":f"Path contains a brand domain while actual host is '{fqdn}' — impersonation",
                 "severity":50})
             score += 50
-
-        # ── CHECK 5: Multiple dirty/suspicious words in domain ──
         if feats["num_dirty_words_domain"] >= 2 and not is_real_brand and not trusted_tld:
             findings.append({"flagged":True,"check":"Multiple Phishing Keywords in Domain",
                 "detail":f"{feats['num_dirty_words_domain']} suspicious words in domain: "
@@ -138,8 +127,6 @@ class URLAnalyzer:
                 "detail":f"Domain contains phishing-related keyword",
                 "severity":12})
             score += 12
-
-        # ── CHECK 6: Deep subdomain chain ──
         if feats["num_subdomains"] >= 4 and not trusted_tld:
             findings.append({"flagged":True,"check":"Excessive Subdomain Depth",
                 "detail":f"{feats['num_subdomains']}-level subdomain chain in '{subdomain}'",
@@ -150,15 +137,11 @@ class URLAnalyzer:
                 "detail":f"{feats['num_subdomains']}-level subdomain: '{subdomain}'",
                 "severity":8})
             score += 8
-
-        # ── CHECK 7: No HTTPS ──
         if not feats["is_https"]:
             findings.append({"flagged":True,"check":"No HTTPS",
                 "detail":"Unencrypted HTTP — any credentials would be transmitted in plaintext",
                 "severity":10})
             score += 10
-
-        # ── CHECK 8: URL obfuscation ──
         if feats["num_at_symbols"]:
             findings.append({"flagged":True,"check":"@ Symbol in URL",
                 "detail":"@ in URL authority causes the browser to redirect to what follows it",
@@ -169,29 +152,21 @@ class URLAnalyzer:
                 "detail":f"{feats['num_obfuscated_chars']} percent-encoded chars — possible obfuscation",
                 "severity":15})
             score += 15
-
-        # ── CHECK 9: IDN / Homograph ──
         if feats["is_idn"]:
             findings.append({"flagged":True,"check":"IDN / Homograph Attack",
                 "detail":"URL contains Unicode characters that look like ASCII — visual deception",
                 "severity":35})
             score += 35
-
-        # ── CHECK 10: Non-standard port ──
         if feats["has_nonstandard_port"]:
             findings.append({"flagged":True,"check":"Non-Standard Port",
                 "detail":f"Unusual port in URL — legitimate services rarely use non-standard ports",
                 "severity":10})
             score += 10
-
-        # ── CHECK 11: Double slash redirect ──
         if feats["has_double_slash"]:
             findings.append({"flagged":True,"check":"Double Slash Redirect",
                 "detail":"Double slash in path — browser redirect trick",
                 "severity":10})
             score += 10
-
-        # ── CHECK 12: Suspicious subdomain (brand in subdomain for non-brand) ──
         if not is_real_brand and not trusted_tld:
             sub_brand = any(b in subdomain for b in BRAND_NAMES if len(b) > 4)
             if sub_brand and not any(subdomain.split(".")[-1] == b for b in REAL_BRAND_DOMAINS):
@@ -200,15 +175,11 @@ class URLAnalyzer:
                     "detail":f"Subdomain '{subdomain}' contains brand '{brand_found[0]}' — classic phishing pattern",
                     "severity":30})
                 score += 30
-
-        # ── CHECK 13: Very long URL ──
         if feats["url_length"] > 200 and not trusted_tld:
             findings.append({"flagged":True,"check":"Excessively Long URL",
                 "detail":f"URL is {feats['url_length']} characters — phishing URLs are often padded",
                 "severity":8})
             score += 8
-
-        # Trust score adjustment
         if is_real_brand:
             score = min(score, 10)  # Cap at 10 for real brands
         if trusted_tld:
