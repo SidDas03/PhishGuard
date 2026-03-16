@@ -12,7 +12,6 @@
 <div class="bg-grid"></div>
 <div class="scanline"></div>
 
-<!-- Sidebar -->
 <aside class="sidebar">
   <div class="logo">
     <div class="logo-icon">
@@ -46,10 +45,9 @@
   </div>
 </aside>
 
-<!-- Main -->
 <main class="main">
 
-  <!-- Offline Banner -->
+ 
   <div id="offline-banner" style="display:none;background:rgba(255,45,85,0.12);border-bottom:1px solid rgba(255,45,85,0.3);padding:10px 28px;align-items:center;gap:12px;">
     <span style="font-size:0.9rem;">⚠</span>
     <div>
@@ -58,7 +56,6 @@
     </div>
   </div>
 
-  <!-- Topbar -->
   <header class="topbar">
     <div class="topbar-left">
       <span id="view-title" class="view-title">SOC Dashboard</span>
@@ -73,7 +70,6 @@
     </div>
   </header>
 
-  <!-- ═══ DASHBOARD ═══ -->
   <section class="view active" id="view-dashboard">
     <div class="stat-row">
       <div class="stat-card"><div class="stat-icon">📡</div><div class="stat-body"><div class="stat-num" id="s-total">—</div><div class="stat-label">Total Scans</div></div></div>
@@ -97,7 +93,6 @@
     </div>
   </section>
 
-  <!-- ═══ URL SCANNER ═══ -->
   <section class="view" id="view-scanner">
     <div class="scanner-layout">
       <div class="scanner-input-section">
@@ -127,7 +122,6 @@
     </div>
   </section>
 
-  <!-- ═══ BULK SCANNER ═══ -->
   <section class="view" id="view-bulk">
     <div class="scanner-layout">
       <div class="scanner-input-section">
@@ -187,7 +181,7 @@ https://microsoft-verify.online/confirm
     </div>
   </section>
 
-  <!-- ═══ WATCHLIST ═══ -->
+
   <section class="view" id="view-watchlist">
     <div class="panel" style="margin-bottom:14px;">
       <div class="panel-header"><span class="panel-title">ADD TO WATCHLIST</span></div>
@@ -220,8 +214,7 @@ https://microsoft-verify.online/confirm
       <div id="watchlist-results" style="padding:8px;"></div>
     </div>
   </section>
-
-  <!-- ═══ HISTORY ═══ -->
+  
   <section class="view" id="view-history">
     <div class="panel">
       <div class="panel-header">
@@ -237,8 +230,7 @@ https://microsoft-verify.online/confirm
       </table>
     </div>
   </section>
-
-  <!-- ═══ ANALYTICS ═══ -->
+  
   <section class="view" id="view-analytics">
     <div class="analytics-grid">
       <div class="panel"><div class="panel-header"><span class="panel-title">RISK SCORE DISTRIBUTION</span></div><canvas id="bar-chart" width="400" height="280" style="padding:16px;"></canvas></div>
@@ -253,8 +245,7 @@ https://microsoft-verify.online/confirm
       </div>
     </div>
   </section>
-
-  <!-- ═══ API REFERENCE ═══ -->
+  
   <section class="view" id="view-api">
     <div class="api-docs"><div class="panel"><div class="panel-header"><span class="panel-title">REST API REFERENCE — v5.0</span></div>
     <div class="api-content">
@@ -304,7 +295,6 @@ https://microsoft-verify.online/confirm
 
 </main>
 
-<!-- Modal -->
 <div class="modal-overlay" id="modal" style="display:none;" onclick="closeModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <button class="modal-close" onclick="closeModal()">✕</button>
