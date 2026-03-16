@@ -32,15 +32,12 @@ import joblib
 
 from feature_extractor import extract_features, FEATURE_NAMES, feature_vector
 
-# ── Config ──────────────────────────────────────────────────────────────────
 CSV_FILE   = os.path.join(os.path.dirname(__file__), "phiusiil_phishing_url_website.csv")
 MODEL_DIR  = os.path.join(os.path.dirname(__file__), "..", "models")
-BATCH_SIZE = 5000   # process in batches to show progress
-MAX_ROWS   = None   # set to e.g. 50000 to limit for faster training; None = all rows
+BATCH_SIZE = 5000  
+MAX_ROWS   = None  
 
-# ── Validation URLs (our known problem cases) ───────────────────────────────
 VALIDATION_CASES = [
-    # SAFE — must score < 0.5
     ("https://www.google.com",                                              0),
     ("https://security.berkeley.edu/resources/phishing",                   0),
     ("https://docs.python.org/3/library/urllib.html",                      0),
@@ -86,7 +83,6 @@ def load_dataset(csv_path: str, max_rows=None):
     df = pd.read_csv(csv_path, nrows=max_rows)
     print(f"  Loaded {len(df):,} rows, columns: {list(df.columns)}")
 
-    # Auto-detect URL and label columns
     url_col   = None
     label_col = None
 
@@ -98,7 +94,6 @@ def load_dataset(csv_path: str, max_rows=None):
                        'status', 'type', 'is_phishing'):
             label_col = col
 
-    # Fallback: guess from column values
     if not url_col:
         for col in df.columns:
             sample = str(df[col].iloc[0])
@@ -122,7 +117,6 @@ def load_dataset(csv_path: str, max_rows=None):
     print(f"  URL column:   '{url_col}'")
     print(f"  Label column: '{label_col}'")
 
-    # Normalise labels to 0/1
     raw_labels = df[label_col].dropna().unique()
     print(f"  Label values: {raw_labels[:10]}")
 
@@ -314,28 +308,21 @@ def main():
     print("Dataset: PhishUSIIL (Kaggle)")
     print("=" * 60)
 
-    # Load dataset
     urls, labels = load_dataset(CSV_FILE, max_rows=MAX_ROWS)
 
-    # Extract features
     X, y = extract_features_batch(urls, labels)
 
-    # Split
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.20, random_state=42, stratify=y
     )
     print(f"\nTrain: {len(y_train):,}  |  Test: {len(y_test):,}")
 
-    # Train
     rf, gb, scaler, X_test_s = train(X_train, y_train, X_test, y_test)
 
-    # Evaluate
     acc, f1, auc = evaluate(rf, gb, scaler, X_test_s, y_test)
 
-    # Validate
     validate_problem_cases(rf, gb, scaler)
 
-    # Save
     save_models(rf, gb, scaler)
 
     print("\n" + "=" * 60)
