@@ -9,7 +9,7 @@ from feature_extractor import (
     PHISHING_TLDS, TRUSTED_TLDS, DIRTY_WORDS, BRAND_NAMES
 )
 
-WHITELIST = TOP_DOMAINS  # already contains all major trusted domains
+WHITELIST = TOP_DOMAINS 
 
 
 class DomainIntelligence:
@@ -28,8 +28,6 @@ class DomainIntelligence:
 
         findings = []
         score    = 0
-
-        # Whitelisted domains: skip everything
         if whitelisted:
             return {
                 "module": "Domain Intelligence", "score": 0, "domain": fqdn,
@@ -41,33 +39,28 @@ class DomainIntelligence:
                 "dns_records": {},
             }
 
-        # DNS check
         dns = self._check_dns(f"{domain}.{tld}" if tld else domain, trusted)
         if dns["flagged"]:
             findings.append(dns)
             score += dns.get("severity", 0)
 
-        # Subdomain brand impersonation
         if not whitelisted:
             sub_check = self._check_subdomain_impersonation(subdomain, domain)
             if sub_check["flagged"]:
                 findings.append(sub_check)
                 score += sub_check.get("severity", 0)
 
-        # Domain entropy (DGA detection)
         if not trusted:
             ent = self._check_entropy(domain)
             if ent["flagged"]:
                 findings.append(ent)
                 score += ent.get("severity", 0)
 
-        # Hyphen/length anomalies
         struct = self._check_structure(domain, trusted)
         if struct["flagged"]:
             findings.append(struct)
             score += struct.get("severity", 0)
 
-        # Numeric domain
         if not trusted:
             num = self._check_numeric(domain)
             if num["flagged"]:
