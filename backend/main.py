@@ -25,7 +25,6 @@ from watchlist         import WatchlistMonitor
 
 app = Flask(__name__)
 
-# ── Instances ────────────────────────────────────────────────────────────────
 url_analyzer     = URLAnalyzer()
 domain_intel     = DomainIntelligence()
 ssl_inspector    = SSLInspector()
@@ -37,27 +36,24 @@ scan_db          = ScanHistoryDB()
 email_scanner    = EmailScanner()
 watchlist        = WatchlistMonitor(scan_db)
 
-# Wire scan function into watchlist and start monitor
 watchlist.start()
 
-# ── Constants ────────────────────────────────────────────────────────────────
 MAX_URL_LENGTH   = 2048
 MAX_BULK_URLS    = 50
-MAX_EMAIL_SIZE   = 100_000   # 100 KB
+MAX_EMAIL_SIZE   = 100_000  
 MAX_FILE_LINES   = 500
-RATE_LIMIT_WINDOW = 60       # seconds
-RATE_LIMIT_MAX    = 60       # requests per window
-DB_MAX_ENTRIES   = 10_000    # auto-prune after this
+RATE_LIMIT_WINDOW = 60      
+RATE_LIMIT_MAX    = 60      
+DB_MAX_ENTRIES   = 10_000    
 
 ALLOWED_SCHEMES  = {"http", "https"}
 BLOCKED_SCHEMES  = {"javascript", "file", "data", "ftp", "ftps",
                      "vbscript", "about", "blob", "chrome", "ms-appx"}
 
-# Per-IP rate limit store (in-memory, resets on restart)
 _rate_store: dict = {}
 _rate_lock  = threading.Lock()
 
-# API keys store — loaded from api_keys.json if present
+
 KEYS_FILE = os.path.join(os.path.dirname(__file__), "api_keys.json")
 
 def _load_keys() -> dict:
@@ -67,7 +63,7 @@ def _load_keys() -> dict:
                 return json.load(f)
         except Exception:
             pass
-    # Default: one master key on first run
+
     master = secrets.token_hex(24)
     keys = {master: {"name": "master", "created": datetime.now(timezone.utc).isoformat()}}
     with open(KEYS_FILE, "w") as f:
@@ -79,8 +75,6 @@ def _load_keys() -> dict:
     return keys
 
 API_KEYS = _load_keys()
-
-# ── Helpers ──────────────────────────────────────────────────────────────────
 
 def sanitize(obj):
     """Recursively make any object JSON-safe."""
@@ -113,17 +107,14 @@ def validate_url(url: str) -> tuple[bool, str]:
     if not url or not isinstance(url, str):
         return False, "URL is required"
     url = url.strip()
-    # Remove null bytes and control characters
     url = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", url)
     if len(url) > MAX_URL_LENGTH:
         return False, f"URL exceeds maximum length of {MAX_URL_LENGTH} characters"
-    # Check for blocked schemes BEFORE adding https:// prefix
     import urllib.parse as _up
     _pre_parsed = _up.urlparse(url)
     _pre_scheme = _pre_parsed.scheme.lower()
     if _pre_scheme and _pre_scheme in BLOCKED_SCHEMES:
         return False, f"URI scheme '{_pre_scheme}' is not allowed — only http/https supported"
-    # If scheme present but not http/https, block it
     if _pre_scheme and _pre_scheme not in ALLOWED_SCHEMES and "://" in url:
         return False, f"URI scheme '{_pre_scheme}' is not allowed — only http/https supported"
 
@@ -150,7 +141,6 @@ def check_rate_limit(ip: str) -> bool:
     with _rate_lock:
         if ip not in _rate_store:
             _rate_store[ip] = []
-        # Remove old entries outside window
         _rate_store[ip] = [t for t in _rate_store[ip] if now - t < RATE_LIMIT_WINDOW]
         if len(_rate_store[ip]) >= RATE_LIMIT_MAX:
             return False
@@ -161,8 +151,7 @@ def require_api_key(f):
     """Decorator — checks X-API-Key header. Skips if no keys configured."""
     import functools
     @functools.wraps(f)
-    def decorated(*args, **kwargs):
-        # If only master key exists and this is a local request, allow without key
+    def decorated(*args, **kwargs)
         client_ip = request.remote_addr
         if client_ip in ("127.0.0.1", "::1", "localhost"):
             return f(*args, **kwargs)
@@ -184,7 +173,6 @@ def is_ssrf_target(url: str) -> bool:
             return ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved
         except ValueError:
             pass
-        # AWS metadata endpoint
         if "169.254.169.254" in host or "metadata.google.internal" in host:
             return True
     except Exception:
@@ -192,7 +180,6 @@ def is_ssrf_target(url: str) -> bool:
     return False
 
 def run_scan(url: str, options: dict) -> dict:
-    # Wire watchlist on first call if not yet set
     if not watchlist._run_scan_fn: watchlist.set_scan_fn(run_scan)
     """Core scan logic — separated for reuse."""
     scan_id = str(uuid.uuid4())[:8].upper()
@@ -238,12 +225,9 @@ def run_scan(url: str, options: dict) -> dict:
         "scan_duration_ms": round((time.time() - t0) * 1000, 2),
     }
     scan_db.save(result)
-    # Auto-prune if DB too large
     if scan_db.get_total_count() > DB_MAX_ENTRIES:
         scan_db.prune(keep=DB_MAX_ENTRIES // 2)
     return result
-
-# ── CORS + Preflight ─────────────────────────────────────────────────────────
 
 @app.after_request
 def add_cors(response):
@@ -263,8 +247,6 @@ def handle_preflight():
         resp.headers["Access-Control-Allow-Headers"] = "Content-Type, X-API-Key"
         resp.headers["Access-Control-Allow-Methods"] = "GET,POST,DELETE,OPTIONS"
         return resp, 204
-
-# ── Routes ───────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def root():
@@ -296,8 +278,6 @@ def health():
                       "watchlist_active": watchlist.is_running(),
                       "db_entries": scan_db.get_total_count()})
 
-# ── Single URL Scan ──────────────────────────────────────────────────────────
-
 @app.route("/api/scan", methods=["POST"])
 def scan_url():
     # Rate limit
@@ -315,8 +295,6 @@ def scan_url():
         return safe_json(result)
     except Exception as e:
         return safe_json({"error": "Scan failed. Check server logs."}, 500)
-
-# ── Bulk Scan ────────────────────────────────────────────────────────────────
 
 @app.route("/api/scan/bulk", methods=["POST"])
 def bulk_scan():
@@ -348,8 +326,6 @@ def bulk_scan():
         "safe": len(results) - phishing, "results": results
     })
 
-# ── File Upload Scan ─────────────────────────────────────────────────────────
-
 @app.route("/api/scan/file", methods=["POST"])
 def scan_file():
     """Accept a .txt or .csv file with one URL per line."""
@@ -371,7 +347,6 @@ def scan_file():
     content = f.read(MAX_FILE_LINES * 300).decode("utf-8", errors="ignore")
     lines = [l.strip() for l in content.splitlines() if l.strip()]
 
-    # For CSV: extract URL from first column (skip header if it says 'url')
     urls_raw = []
     for line in lines[:MAX_FILE_LINES]:
         if "," in line:
@@ -412,8 +387,6 @@ def scan_file():
         "top_threats":  sorted(phishing, key=lambda x: x.get("risk_score",0), reverse=True)[:5],
     })
 
-# ── Email Scanner ────────────────────────────────────────────────────────────
-
 @app.route("/api/email/scan", methods=["POST"])
 def scan_email():
     """Extract all URLs from email body/text and scan them."""
@@ -435,8 +408,6 @@ def scan_email():
                                 run_scan_fn=run_scan)
     return safe_json(result)
 
-# ── PDF Report ───────────────────────────────────────────────────────────────
-
 @app.route("/api/report/<scan_id>")
 def get_report(scan_id: str):
     """Generate and download a PDF report for a scan."""
@@ -452,8 +423,6 @@ def get_report(scan_id: str):
                          mimetype="application/pdf")
     except Exception as e:
         return safe_json({"error": f"Report generation failed: {str(e)[:60]}"}, 500)
-
-# ── Watchlist ────────────────────────────────────────────────────────────────
 
 @app.route("/api/watchlist", methods=["GET"])
 def get_watchlist():
@@ -479,7 +448,6 @@ def remove_from_watchlist(domain: str):
 def watchlist_results():
     return safe_json({"results": watchlist.get_results()})
 
-# ── History / Stats ──────────────────────────────────────────────────────────
 
 @app.route("/api/history")
 def get_history():
@@ -513,8 +481,6 @@ def get_dashboard():
         "top_indicators":      scan_db.get_top_indicators(),
         "watchlist_count":     len(watchlist.get_all()),
     })
-
-# ── API Key Management ───────────────────────────────────────────────────────
 
 @app.route("/api/keys", methods=["GET"])
 def list_keys():
