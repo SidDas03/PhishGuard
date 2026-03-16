@@ -22,8 +22,7 @@ class WatchlistMonitor:
         self._lock        = threading.Lock()
         self._thread      = None
         self._running     = False
-        self._run_scan_fn = None  # set after app is ready
-
+        self._run_scan_fn = None
     def set_scan_fn(self, fn: Callable):
         self._run_scan_fn = fn
 
@@ -48,8 +47,7 @@ class WatchlistMonitor:
                 next_check = entry.get("last_checked", 0) + entry.get("interval_seconds", 3600)
                 if now >= next_check and self._run_scan_fn:
                     self._check_entry(entry)
-            time.sleep(30)  # poll every 30 seconds
-
+            time.sleep(30)  
     def _check_entry(self, entry: Dict):
         url = entry["url"]
         try:
@@ -76,11 +74,9 @@ class WatchlistMonitor:
             }
 
             with self._lock:
-                # Update entry
                 self._entries[url]["last_checked"] = time.time()
                 self._entries[url]["last_score"]   = new_score
                 self._entries[url]["check_count"]  = entry.get("check_count", 0) + 1
-                # Keep last 100 results
                 self._results = ([record] + self._results)[:100]
 
             self._save()
