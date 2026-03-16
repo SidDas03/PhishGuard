@@ -14,7 +14,6 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 REPORTS_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "reports")
 os.makedirs(REPORTS_DIR, exist_ok=True)
 
-# Colour palette
 C_BG      = colors.HexColor("#0e1520")
 C_PANEL   = colors.HexColor("#111820")
 C_ACCENT  = colors.HexColor("#00e5ff")
@@ -68,7 +67,6 @@ def generate_report(scan: dict) -> str:
 
     story = []
 
-    # ── Header ──────────────────────────────────────────────────────────────
     header_data = [[
         Paragraph('<font color="#00e5ff"><b>PhishGuard</b></font> '
                   '<font color="#6a8aaa">v5 — Threat Intelligence Report</font>',
@@ -90,13 +88,11 @@ def generate_report(scan: dict) -> str:
     story.append(header_tbl)
     story.append(Spacer(1, 6*mm))
 
-    # ── URL & Score ──────────────────────────────────────────────────────────
     score   = scan.get("risk_score", 0)
     rc      = risk_color(score)
     rl      = risk_label(score)
     url     = scan.get("url", "—")
     rec     = scan.get("recommendation", "")
-    # strip emoji from recommendation for PDF
     rec_clean = re.sub(r'[^\x00-\x7F]+', '', rec).strip()
 
     score_data = [[
@@ -145,7 +141,6 @@ def generate_report(scan: dict) -> str:
     story.append(url_tbl)
     story.append(Spacer(1, 5*mm))
 
-    # ── Module Scores ────────────────────────────────────────────────────────
     story.append(Paragraph('<font color="#6a8aaa"><b>MODULE SCORES</b></font>',
                            style("Normal", fontSize=8, textColor=C_MUTED)))
     story.append(Spacer(1, 2*mm))
@@ -188,7 +183,6 @@ def generate_report(scan: dict) -> str:
     story.append(mod_tbl)
     story.append(Spacer(1, 5*mm))
 
-    # ── Indicators ───────────────────────────────────────────────────────────
     indicators = scan.get("indicators", [])
     if indicators:
         story.append(Paragraph(
@@ -236,7 +230,6 @@ def generate_report(scan: dict) -> str:
         story.append(ind_tbl)
         story.append(Spacer(1, 5*mm))
 
-    # ── ML Details ───────────────────────────────────────────────────────────
     ml = checks.get("ml_detection", {})
     if ml.get("phishing_probability") is not None:
         story.append(Paragraph('<font color="#6a8aaa"><b>ML DETECTION DETAILS</b></font>',
@@ -267,7 +260,6 @@ def generate_report(scan: dict) -> str:
         story.append(ml_tbl)
         story.append(Spacer(1, 5*mm))
 
-    # ── Footer ───────────────────────────────────────────────────────────────
     story.append(HRFlowable(width=W, color=C_DARK))
     story.append(Spacer(1, 2*mm))
     story.append(Paragraph(
