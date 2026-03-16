@@ -76,7 +76,6 @@ class SSLInspector:
         na = parse_dt(cert.get("notAfter",""))
         san = [name for typ,name in cert.get("subjectAltName",[]) if typ=="DNS"]
 
-        # Store datetimes separately for internal checks — NOT in the returned dict
         self._cert_nb = nb
         self._cert_na = na
         return {
@@ -125,7 +124,6 @@ class SSLInspector:
                 return {"flagged":False,"check":"Certificate Issuer",
                         "detail":f"Issued by trusted CA: {d.get('issuer_org')}","severity":0}
         if "let" in issuer and "encrypt" in issuer:
-            # Let's Encrypt alone is NOT enough to flag — it's used by millions of legit sites
             return {"flagged":False,"check":"Certificate Issuer",
                     "detail":"Issued by Let's Encrypt (widely used, legitimate CA)","severity":0}
         if not issuer or issuer in ["unknown",""]:
