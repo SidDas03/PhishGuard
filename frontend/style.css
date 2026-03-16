@@ -1,8 +1,3 @@
-/* ============================================================
-   PhishGuard SOC Dashboard — Dark Cyber Aesthetic
-   Font: Syne (headings) + Space Mono (data/code)
-   ============================================================ */
-
 :root {
   --bg: #070a0f;
   --bg2: #0c1118;
@@ -38,7 +33,6 @@ body {
   display: flex;
 }
 
-/* ---- Background ---- */
 .bg-grid {
   position: fixed; inset: 0; z-index: 0;
   background-image:
@@ -56,7 +50,6 @@ body {
   pointer-events: none;
 }
 
-/* ---- Sidebar ---- */
 .sidebar {
   width: 220px; min-width: 220px;
   background: var(--bg2);
@@ -124,7 +117,6 @@ body {
   50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(0,255,136,0); }
 }
 
-/* ---- Main ---- */
 .main {
   margin-left: 220px;
   flex: 1;
@@ -133,7 +125,6 @@ body {
   position: relative; z-index: 1;
 }
 
-/* ---- Topbar ---- */
 .topbar {
   height: 60px;
   background: var(--bg2);
@@ -167,11 +158,9 @@ body {
   padding-left: 16px;
 }
 
-/* ---- Views ---- */
 .view { display: none; padding: 24px 28px; }
 .view.active { display: block; }
 
-/* ---- Stat Cards ---- */
 .stat-row {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -213,7 +202,6 @@ body {
   align-self: flex-start;
 }
 
-/* ---- Dashboard Grid ---- */
 .dashboard-grid {
   display: grid;
   grid-template-columns: 260px 1fr 1fr 260px;
@@ -221,7 +209,6 @@ body {
   gap: 14px;
 }
 
-/* ---- Panel ---- */
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -256,7 +243,6 @@ body {
 }
 .btn-mini:hover { color: var(--accent); border-color: var(--accent2); }
 
-/* ---- Ring Chart ---- */
 .chart-ring-wrap {
   position: relative;
   display: flex; justify-content: center;
@@ -291,7 +277,6 @@ body {
   width: 8px; height: 8px; border-radius: 50%;
 }
 
-/* ---- Scan Table ---- */
 .scan-table {
   width: 100%;
   border-collapse: collapse;
@@ -325,7 +310,6 @@ body {
   letter-spacing: 0.05em;
 }
 
-/* Risk Score Badge */
 .risk-badge {
   display: inline-flex; align-items: center;
   gap: 6px; padding: 3px 10px; border-radius: 4px;
@@ -338,7 +322,6 @@ body {
 .risk-high { background: rgba(255,140,0,0.12); color: var(--orange); border: 1px solid rgba(255,140,0,0.25); }
 .risk-critical { background: rgba(255,45,85,0.12); color: var(--red); border: 1px solid rgba(255,45,85,0.25); }
 
-/* ---- Indicators List ---- */
 #indicators-list { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
 .ind-item {
   display: flex; align-items: center; gap: 10px;
@@ -353,7 +336,6 @@ body {
 }
 .ind-name { min-width: 160px; color: var(--text2); font-size: 0.6rem; }
 
-/* ---- Trends ---- */
 .trend-bars {
   padding: 16px;
   display: flex; align-items: flex-end; gap: 8px;
@@ -374,7 +356,6 @@ body {
 .trend-bar.safe { background: var(--accent); opacity: 0.5; }
 .trend-label { font-size: 0.55rem; color: var(--text3); letter-spacing: 0.05em; }
 
-/* ---- Scanner ---- */
 .scanner-layout { max-width: 900px; }
 
 .scanner-header { margin-bottom: 28px; }
@@ -452,7 +433,6 @@ body {
 .example-btn.warn { border: 1px solid rgba(255,140,0,0.3); color: var(--orange); }
 .example-btn.warn:hover { background: rgba(255,140,0,0.08); }
 
-/* ---- Scan Progress ---- */
 .scan-progress-wrap {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -489,7 +469,6 @@ body {
 .mod-status.active { color: var(--accent); }
 .mod-status.pending { color: var(--text3); }
 
-/* ---- Scan Result ---- */
 .scan-result {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -601,7 +580,6 @@ body {
 .ind-detail { font-size: 0.62rem; color: var(--text2); }
 .ind-source { font-size: 0.55rem; color: var(--text3); margin-top: 2px; letter-spacing: 0.08em; }
 
-/* ---- History ---- */
 .filter-input {
   background: var(--bg3); border: 1px solid var(--border2);
   color: var(--text); font-family: var(--font-mono);
@@ -610,7 +588,6 @@ body {
 }
 .filter-input:focus { border-color: var(--accent2); }
 
-/* ---- Analytics ---- */
 .analytics-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -639,7 +616,6 @@ body {
 }
 .ti-status.active { color: var(--green); }
 
-/* ---- API Docs ---- */
 .api-content { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
 .api-endpoint {
   background: var(--bg3); border: 1px solid var(--border);
@@ -674,7 +650,6 @@ body {
 }
 .response-example { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
 
-/* ---- Modal ---- */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 200;
   background: rgba(0,0,0,0.8);
@@ -701,13 +676,11 @@ body {
 }
 .modal-close:hover { color: var(--text); border-color: var(--text2); }
 
-/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg2); }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
 
-/* Loading state */
 .loading-pulse {
   animation: lp 1.5s ease-in-out infinite;
 }
@@ -716,7 +689,6 @@ body {
   50% { opacity: 1; }
 }
 
-/* Responsive adjustments */
 @media (max-width: 1400px) {
   .stat-row { grid-template-columns: repeat(3, 1fr); }
   .dashboard-grid { grid-template-columns: 240px 1fr 240px; }
@@ -725,8 +697,6 @@ body {
   .sidebar { width: 180px; min-width: 180px; }
   .main { margin-left: 180px; }
 }
-
-/* ── v4 ML breakdown styles ───────────────────────────────────────── */
 
 .ml-breakdown {
   display: flex;
@@ -859,7 +829,6 @@ body {
   border:1px solid rgba(191,90,242,0.2); letter-spacing:0.06em;
 }
 
-/* Feature breakdown */
 .feature-breakdown { padding:14px 18px; border-top:1px solid var(--border); background:var(--bg3); }
 .feature-title { font-size:0.58rem; font-weight:700; letter-spacing:0.18em; color:var(--text3); margin-bottom:10px; }
 .feature-row { display:flex; align-items:center; gap:10px; margin-bottom:6px; font-size:0.62rem; }
@@ -868,13 +837,11 @@ body {
 .feature-bar { height:100%; background:var(--purple); border-radius:2px; transition:width 0.5s; }
 .feature-val { min-width:40px; text-align:right; color:var(--text3); font-size:0.58rem; }
 
-/* Result header with PDF button */
 .result-header {
   padding:16px 24px; display:flex; align-items:center;
   justify-content:space-between; border-bottom:1px solid var(--border);
 }
 
-/* API docs */
 .api-docs .panel { max-width:900px; }
 .api-content { padding:20px; display:flex; flex-direction:column; gap:14px; }
 .api-endpoint { background:var(--bg3); border:1px solid var(--border); border-radius:6px; overflow:hidden; }
@@ -887,7 +854,6 @@ body {
 .code-block { background:var(--bg); padding:12px 16px; font-family:var(--font-mono); font-size:0.68rem; color:var(--text2); overflow-x:auto; line-height:1.6; white-space:pre; }
 .response-example { background:var(--bg3); border:1px solid var(--border); border-radius:6px; overflow:hidden; }
 
-/* Responsive */
 @media (max-width:1200px) {
   .analytics-grid { grid-template-columns:1fr; }
   .ti-grid { grid-template-columns:repeat(2,1fr); }
