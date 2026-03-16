@@ -9,9 +9,9 @@ from typing import Dict, Any
 
 requests.packages.urllib3.disable_warnings()
 
-VT_POLL_WAIT    = 3    # seconds to wait between polls
-VT_POLL_RETRIES = 6    # max retries = 18 seconds total wait
-VT_TIMEOUT      = 15   # seconds for each HTTP request
+VT_POLL_WAIT    = 3   
+VT_POLL_RETRIES = 6    
+VT_TIMEOUT      = 15  
 
 
 def _safe(detail="", flagged=False, severity=0, **kw):
@@ -39,7 +39,6 @@ class ThreatIntelligence:
             except Exception as e:
                 r = _safe(detail=f"Check error: {str(e)[:80]}")
 
-            # Guarantee r is always a valid dict
             if not isinstance(r, dict):
                 r = _safe(detail="Unexpected response format")
             r.setdefault("flagged",  False)
@@ -64,8 +63,6 @@ class ThreatIntelligence:
             "sources":        data,
         }
 
-    # ── VirusTotal ────────────────────────────────────────────────────────────
-
     def _virustotal(self, url: str) -> Dict:
         if not self.vt_key:
             return _safe(
@@ -76,7 +73,6 @@ class ThreatIntelligence:
         hdrs    = {"x-apikey": self.vt_key}
         url_id  = base64.urlsafe_b64encode(url.encode()).decode().strip("=")
 
-        # ── Step 1: Try to GET existing analysis ─────────────────────────────
         try:
             resp = requests.get(
                 f"https://www.virustotal.com/api/v3/urls/{url_id}",
@@ -96,8 +92,7 @@ class ThreatIntelligence:
                     detail="VirusTotal rate limit reached (free tier: 4 req/min). "
                            "Wait 60 seconds and try again."
                 )
-
-            # 404 or empty stats → submit for fresh analysis
+s
         except requests.exceptions.Timeout:
             return _safe(detail="VirusTotal request timed out.")
         except requests.exceptions.ConnectionError:
@@ -105,7 +100,6 @@ class ThreatIntelligence:
         except Exception as e:
             return _safe(detail=f"VirusTotal error: {str(e)[:80]}")
 
-        # ── Step 2: Submit URL for analysis ──────────────────────────────────
         try:
             sub = requests.post(
                 "https://www.virustotal.com/api/v3/urls",
@@ -129,7 +123,6 @@ class ThreatIntelligence:
         except Exception as e:
             return _safe(detail=f"VirusTotal submission failed: {str(e)[:80]}")
 
-        # ── Step 3: Poll for analysis result (up to ~18 seconds) ─────────────
         if analysis_id:
             for attempt in range(VT_POLL_RETRIES):
                 time.sleep(VT_POLL_WAIT)
@@ -152,7 +145,6 @@ class ThreatIntelligence:
                 except Exception:
                     pass
 
-        # Polling timed out — return informational message
         return _safe(
             detail="URL submitted to VirusTotal for analysis. "
                    "Scan again in 60 seconds for results.",
@@ -168,14 +160,14 @@ class ThreatIntelligence:
         stats  = attrs.get("last_analysis_stats", {}) or attrs.get("stats", {})
 
         if not stats:
-            return None  # Analysis not complete yet
+            return None  
 
         mal   = int(stats.get("malicious",  0))
         sus   = int(stats.get("suspicious", 0))
         total = sum(int(v) for v in stats.values())
 
         if total == 0:
-            return None  # No engines have run yet
+            return None 
 
         if mal >= 10:
             return _safe(
@@ -217,8 +209,6 @@ class ThreatIntelligence:
             detail=f"Clean — {total} engines checked, 0 malicious detections",
             stats=stats,
         )
-
-    # ── Google Safe Browsing ──────────────────────────────────────────────────
 
     def _google_sb(self, url: str) -> Dict:
         if not self.gsb_key:
@@ -264,8 +254,6 @@ class ThreatIntelligence:
             return _safe(detail="Could not connect to Google Safe Browsing.")
         except Exception as e:
             return _safe(detail=f"Google Safe Browsing error: {str(e)[:80]}")
-
-    # ── PhishTank ─────────────────────────────────────────────────────────────
 
     def _phishtank(self, url: str) -> Dict:
         try:
