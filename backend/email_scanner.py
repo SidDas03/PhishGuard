@@ -7,12 +7,11 @@ from typing import Dict, Any, List, Callable
 from datetime import datetime, timezone
 import urllib.parse
 
-# Regex to extract URLs from text
 URL_PATTERN = re.compile(
     r'https?://[^\s<>"\')\]\}\\,;]+',
     re.IGNORECASE
 )
-# Also detect obfuscated URLs like hxxp:// or ht[t]ps://
+
 OBFUSCATED_PATTERN = re.compile(
     r'hxxps?://[^\s<>"\')\]\}\\,;]+|'
     r'h\[t\]tps?://[^\s<>"\')\]\}\\,;]+|'
@@ -20,7 +19,6 @@ OBFUSCATED_PATTERN = re.compile(
     re.IGNORECASE
 )
 
-# Phishing email keywords that raise email-level suspicion
 PHISHING_SUBJECT_WORDS = [
     "urgent", "immediate", "suspended", "verify", "confirm", "unusual",
     "alert", "warning", "locked", "compromised", "action required",
@@ -43,27 +41,21 @@ class EmailScanner:
         Extract all URLs from email and scan each one.
         Returns full analysis including email-level risk indicators.
         """
-        # Extract URLs
         raw_urls  = URL_PATTERN.findall(body)
         obf_urls  = OBFUSCATED_PATTERN.findall(body)
 
-        # Deobfuscate hxxp -> http
         deobf = []
         for u in obf_urls:
             clean = u.replace("hxxp", "http").replace("[t]", "t").replace("[tp]", "tp")
             deobf.append(clean)
 
-        all_urls = list(dict.fromkeys(raw_urls + deobf))  # deduplicate, preserve order
-
-        # Limit
+        all_urls = list(dict.fromkeys(raw_urls + deobf))
         MAX_URLS = 50
         truncated = len(all_urls) > MAX_URLS
         all_urls  = all_urls[:MAX_URLS]
 
-        # Email-level risk indicators
         email_indicators = self._analyze_email(subject, sender, body, obf_urls)
 
-        # Scan each URL
         url_results = []
         if run_scan_fn:
             for url in all_urls:
@@ -78,14 +70,11 @@ class EmailScanner:
                     url_results.append({
                         "url": url, "error": str(e)[:60], "status": "failed"
                     })
-
-        # Summary
         phishing   = [r for r in url_results if r.get("risk_score", 0) >= 65]
         suspicious = [r for r in url_results if 45 <= r.get("risk_score", 0) < 65]
         safe       = [r for r in url_results if r.get("risk_score", 0) < 45
                       and "error" not in r]
-
-        # Overall email risk score
+                 
         url_max_score = max((r.get("risk_score", 0) for r in url_results), default=0)
         email_risk    = min(url_max_score + len(email_indicators) * 5, 100)
 
@@ -117,7 +106,6 @@ class EmailScanner:
         sl = subject.lower()
         bl = body.lower()
 
-        # Check subject for phishing keywords
         found_kw = [w for w in PHISHING_SUBJECT_WORDS if w in sl]
         if len(found_kw) >= 2:
             indicators.append({
@@ -132,7 +120,6 @@ class EmailScanner:
                 "severity": 10
             })
 
-        # Obfuscated URLs
         if obf_urls:
             indicators.append({
                 "check":  "Obfuscated URLs Detected",
@@ -140,7 +127,6 @@ class EmailScanner:
                 "severity": 30
             })
 
-        # Sender domain analysis
         if sender and "@" in sender:
             domain = sender.split("@")[-1].rstrip(">").strip().lower()
             for pat in PHISHING_SENDER_PATTERNS:
@@ -152,15 +138,12 @@ class EmailScanner:
                     })
                     break
 
-        # HTML form in email
         if re.search(r"<form[^>]*action", body, re.IGNORECASE):
             indicators.append({
                 "check":  "HTML Form in Email",
                 "detail": "Email contains an HTML form — credential harvesting risk",
                 "severity": 35
-            })
-
-        # Urgency language
+            
         urgency = re.findall(
             r"(within \d+ hours?|expires? (today|soon|in \d+)|last chance|final notice|"
             r"account will be (closed|deleted|suspended)|verify (now|immediately|today))",
@@ -172,7 +155,6 @@ class EmailScanner:
                 "severity": 15
             })
 
-        # Mismatched display text vs actual URL
         link_text = re.findall(r'href=["\']([^"\']+)["\'][^>]*>([^<]{4,50})</a>', body, re.I)
         for href, text in link_text[:10]:
             text_domain = re.search(r'https?://([^/\s]+)', text)
