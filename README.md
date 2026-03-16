@@ -1,4 +1,4 @@
-# PhishGuard v4 🛡️
+# PhishGuard
 ### Intelligent Phishing Detection & Threat Intelligence Platform
 **Accuracy: 100% on 40-case test suite | 97-99% expected on PhishUSIIL full dataset**
 
