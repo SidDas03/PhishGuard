@@ -37,7 +37,6 @@ class MLDetector:
             X       = self.scaler.transform([fv])
             rf_p    = float(self.rf.predict_proba(X)[0][1])
             gb_p    = float(self.gb.predict_proba(X)[0][1])
-            # Weighted ensemble: RF slightly higher weight (better on small datasets)
             prob    = rf_p * 0.55 + gb_p * 0.45
             score   = round(prob * 100, 2)
             label   = self._label(prob)
@@ -51,7 +50,6 @@ class MLDetector:
                     "severity": min(int(prob * 45), 40),
                 })
 
-            # Feature importance explanation
             top_features = self._explain(fv, prob)
 
             return {
