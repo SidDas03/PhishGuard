@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhishGuard v5 — SOC Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="scanline"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <path d="M16 2L4 8v8c0 7.5 5.1 14.5 12 16 6.9-1.5 12-8.5 12-16V8L16 2z" stroke="var(--accent)" stroke-width="1.5" fill="var(--accent)" fill-opacity="0.08"/>
+        <circle cx="16" cy="16" r="3" fill="var(--accent)"/>
+        <line x1="16" y1="10" x2="16" y2="13" stroke="var(--accent)" stroke-width="1.5"/>
+        <line x1="16" y1="19" x2="16" y2="22" stroke="var(--accent)" stroke-width="1.5"/>
+        <line x1="10" y1="16" x2="13" y2="16" stroke="var(--accent)" stroke-width="1.5"/>
+        <line x1="19" y1="16" x2="22" y2="16" stroke="var(--accent)" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <span class="logo-main">PhishGuard</span>
+      <span class="logo-sub">SOC PLATFORM v5.0</span>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nav-item active" data-view="dashboard"><span class="nav-icon">⬡</span> Dashboard</button>
+    <button class="nav-item" data-view="scanner"><span class="nav-icon">⬡</span> URL Scanner</button>
+    <button class="nav-item" data-view="bulk"><span class="nav-icon">⬡</span> Bulk Scanner</button>
+    <button class="nav-item" data-view="email"><span class="nav-icon">⬡</span> Email Scanner</button>
+    <button class="nav-item" data-view="watchlist"><span class="nav-icon">⬡</span> Watchlist</button>
+    <button class="nav-item" data-view="history"><span class="nav-icon">⬡</span> Scan History</button>
+    <button class="nav-item" data-view="analytics"><span class="nav-icon">⬡</span> Analytics</button>
+    <button class="nav-item" data-view="api"><span class="nav-icon">⬡</span> API Reference</button>
+  </nav>
+  <div class="sidebar-status">
+    <div class="status-dot" id="conn-indicator"></div>
+    <span id="conn-label">Connecting...</span>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Offline Banner -->
+  <div id="offline-banner" style="display:none;background:rgba(255,45,85,0.12);border-bottom:1px solid rgba(255,45,85,0.3);padding:10px 28px;align-items:center;gap:12px;">
+    <span style="font-size:0.9rem;">⚠</span>
+    <div>
+      <span style="color:var(--red);font-size:0.68rem;font-weight:700;letter-spacing:0.1em;">BACKEND OFFLINE</span>
+      <span style="color:var(--text2);font-size:0.65rem;margin-left:10px;">Run: <code style="color:var(--accent2);">cd backend &amp;&amp; python main.py</code></span>
+    </div>
+  </div>
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span id="view-title" class="view-title">SOC Dashboard</span>
+      <span class="breadcrumb">PhishGuard / <span id="breadcrumb-sub">Overview</span></span>
+    </div>
+    <div class="topbar-right">
+      <div class="threat-level">
+        <span class="tl-label">THREAT LEVEL</span>
+        <span class="tl-value" id="threat-value">MODERATE</span>
+      </div>
+      <div class="time-display" id="clock"></div>
+    </div>
+  </header>
+
+  <!-- ═══ DASHBOARD ═══ -->
+  <section class="view active" id="view-dashboard">
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-icon">📡</div><div class="stat-body"><div class="stat-num" id="s-total">—</div><div class="stat-label">Total Scans</div></div></div>
+      <div class="stat-card danger"><div class="stat-icon">🎣</div><div class="stat-body"><div class="stat-num" id="s-phish">—</div><div class="stat-label">Phishing Detected</div></div></div>
+      <div class="stat-card warn"><div class="stat-icon">⚠</div><div class="stat-body"><div class="stat-num" id="s-susp">—</div><div class="stat-label">Suspicious</div></div></div>
+      <div class="stat-card safe"><div class="stat-icon">✓</div><div class="stat-body"><div class="stat-num" id="s-safe">—</div><div class="stat-label">Safe Verified</div></div></div>
+      <div class="stat-card"><div class="stat-icon">◎</div><div class="stat-body"><div class="stat-num" id="s-rate">—%</div><div class="stat-label">Detection Rate</div></div></div>
+    </div>
+    <div class="dashboard-grid">
+      <div class="panel" id="panel-dist">
+        <div class="panel-header"><span class="panel-title">THREAT DISTRIBUTION</span><span class="panel-badge">LIVE</span></div>
+        <div class="chart-ring-wrap"><canvas id="ring-chart" width="220" height="220"></canvas><div class="ring-center"><span id="ring-total">0</span><span>SCANNED</span></div></div>
+        <div id="ring-legend" class="ring-legend"></div>
+      </div>
+      <div class="panel" id="panel-recent" style="grid-column:span 2;">
+        <div class="panel-header"><span class="panel-title">RECENT SCAN ACTIVITY</span><button class="btn-mini" onclick="loadDashboard()">REFRESH</button></div>
+        <table class="scan-table"><thead><tr><th>SCAN ID</th><th>URL</th><th>RISK SCORE</th><th>CLASSIFICATION</th><th>TIME</th></tr></thead><tbody id="recent-tbody"></tbody></table>
+      </div>
+      <div class="panel"><div class="panel-header"><span class="panel-title">TOP THREAT INDICATORS</span></div><div id="indicators-list"></div></div>
+      <div class="panel"><div class="panel-header"><span class="panel-title">7-DAY SCAN TREND</span></div><div id="trend-bars" class="trend-bars"></div></div>
+    </div>
+  </section>
+
+  <!-- ═══ URL SCANNER ═══ -->
+  <section class="view" id="view-scanner">
+    <div class="scanner-layout">
+      <div class="scanner-input-section">
+        <div class="scanner-header"><h2>URL Threat Analysis</h2><p>Scan any URL through 6 detection modules powered by ML ensemble + rule-based analysis</p></div>
+        <div class="url-input-wrap">
+          <div class="input-prefix">TARGET://</div>
+          <input type="text" id="url-input" class="url-input" placeholder="https://suspicious-domain.example.com/login" autocomplete="off" spellcheck="false">
+          <button class="scan-btn" id="scan-btn" onclick="startScan()"><span id="scan-btn-text">ANALYZE</span></button>
+        </div>
+        <div class="scan-options">
+          <label class="check-opt"><input type="checkbox" id="opt-ssl" checked> SSL Inspection</label>
+          <label class="check-opt"><input type="checkbox" id="opt-content" checked> Content Analysis</label>
+          <label class="check-opt"><input type="checkbox" id="opt-ti" checked> Threat Intelligence</label>
+        </div>
+        <div class="example-urls">
+          <span class="example-label">TEST WITH:</span>
+          <button class="example-btn phish" onclick="setUrl('http://paypa1-login.verify.tk/account')">Phishing Sample</button>
+          <button class="example-btn safe"  onclick="setUrl('https://github.com')">Legitimate Site</button>
+          <button class="example-btn warn"  onclick="setUrl('https://microsoft-account-verify.online/confirm')">Suspicious</button>
+        </div>
+      </div>
+      <div class="scan-progress-wrap" id="scan-progress" style="display:none;">
+        <div class="progress-title"><div class="spinner"></div><span>ANALYZING TARGET...</span></div>
+        <div class="module-progress" id="module-progress"></div>
+      </div>
+      <div class="scan-result" id="scan-result" style="display:none;"></div>
+    </div>
+  </section>
+
+  <!-- ═══ BULK SCANNER ═══ -->
+  <section class="view" id="view-bulk">
+    <div class="scanner-layout">
+      <div class="scanner-input-section">
+        <div class="scanner-header">
+          <h2>Bulk URL Scanner</h2>
+          <p>Upload a <b>.txt</b> or <b>.csv</b> file with one URL per line — up to 500 URLs at once</p>
+        </div>
+        <div class="bulk-upload-area">
+          <input type="file" id="bulk-file" accept=".txt,.csv" style="display:none" onchange="updateFileLabel(this)">
+          <label for="bulk-file" class="file-drop-label" id="file-drop-label">
+            <div style="font-size:2rem;margin-bottom:8px;">📂</div>
+            <div style="font-size:0.75rem;color:var(--accent);">Click to select file</div>
+            <div style="font-size:0.62rem;color:var(--text3);margin-top:4px;">.txt or .csv · one URL per line</div>
+          </label>
+          <button class="scan-btn" id="bulk-btn" onclick="startBulkScan()" style="margin-top:12px;width:100%;padding:12px;">SCAN FILE</button>
+        </div>
+        <div style="margin-top:16px;padding:14px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);">
+          <div style="font-size:0.6rem;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px;">FILE FORMAT EXAMPLES</div>
+          <pre style="font-size:0.62rem;color:var(--text2);line-height:1.8;">https://suspicious-site.xyz/login
+http://paypa1-secure.tk/account
+https://microsoft-verify.online/confirm
+...</pre>
+        </div>
+      </div>
+      <div id="bulk-results"></div>
+    </div>
+  </section>
+
+  <!-- ═══ EMAIL SCANNER ═══ -->
+  <section class="view" id="view-email">
+    <div class="scanner-layout">
+      <div class="scanner-input-section">
+        <div class="scanner-header">
+          <h2>Email Phishing Scanner</h2>
+          <p>Paste an email body to extract all URLs and scan them for phishing. Detects obfuscated links, urgency tactics, and credential harvesting.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div>
+            <label style="font-size:0.6rem;color:var(--text3);letter-spacing:0.1em;display:block;margin-bottom:4px;">SENDER (optional)</label>
+            <input type="text" id="email-sender" class="url-input" style="width:100%;border:1px solid var(--border2);border-radius:4px;padding:8px 12px;" placeholder="sender@domain.com">
+          </div>
+          <div>
+            <label style="font-size:0.6rem;color:var(--text3);letter-spacing:0.1em;display:block;margin-bottom:4px;">SUBJECT (optional)</label>
+            <input type="text" id="email-subject" class="url-input" style="width:100%;border:1px solid var(--border2);border-radius:4px;padding:8px 12px;" placeholder="URGENT: Your account has been suspended">
+          </div>
+        </div>
+        <div>
+          <label style="font-size:0.6rem;color:var(--text3);letter-spacing:0.1em;display:block;margin-bottom:4px;">EMAIL BODY *</label>
+          <textarea id="email-body" style="width:100%;height:200px;background:var(--panel);border:1px solid var(--border2);border-radius:6px;padding:12px;font-family:var(--font-mono);font-size:0.68rem;color:var(--text);resize:vertical;outline:none;" placeholder="Paste the full email body here — HTML or plain text..."></textarea>
+        </div>
+        <button class="scan-btn" id="email-btn" onclick="startEmailScan()" style="width:100%;margin-top:10px;padding:13px;">SCAN EMAIL</button>
+        <div style="margin-top:12px;padding:12px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);font-size:0.62rem;color:var(--text2);">
+          <b style="color:var(--accent);">What it detects:</b> Phishing URLs, obfuscated links (hxxp://), urgency tactics, HTML forms, link text mismatches, suspicious sender domains
+        </div>
+      </div>
+      <div id="email-results" style="margin-top:16px;"></div>
+    </div>
+  </section>
+
+  <!-- ═══ WATCHLIST ═══ -->
+  <section class="view" id="view-watchlist">
+    <div class="panel" style="margin-bottom:14px;">
+      <div class="panel-header"><span class="panel-title">ADD TO WATCHLIST</span></div>
+      <div style="padding:16px;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+        <div style="flex:1;min-width:250px;">
+          <label style="font-size:0.6rem;color:var(--text3);letter-spacing:0.1em;display:block;margin-bottom:4px;">URL TO MONITOR</label>
+          <input type="text" id="wl-url" class="url-input" style="width:100%;border:1px solid var(--border2);border-radius:4px;padding:9px 12px;" placeholder="https://suspicious-domain.com">
+        </div>
+        <div>
+          <label style="font-size:0.6rem;color:var(--text3);letter-spacing:0.1em;display:block;margin-bottom:4px;">CHECK EVERY</label>
+          <select id="wl-interval" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--font-mono);font-size:0.68rem;padding:9px 12px;border-radius:4px;">
+            <option value="5">5 minutes</option>
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="60" selected>1 hour</option>
+            <option value="360">6 hours</option>
+            <option value="1440">24 hours</option>
+          </select>
+        </div>
+        <button class="scan-btn" onclick="addToWatchlist()" style="padding:9px 24px;">ADD</button>
+        <button class="btn-mini" onclick="loadWatchlist()">REFRESH</button>
+      </div>
+    </div>
+    <div class="panel" style="margin-bottom:14px;">
+      <div class="panel-header"><span class="panel-title">MONITORED URLS</span></div>
+      <div id="watchlist-entries" style="padding:8px;"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">MONITORING RESULTS &amp; ALERTS</span></div>
+      <div id="watchlist-results" style="padding:8px;"></div>
+    </div>
+  </section>
+
+  <!-- ═══ HISTORY ═══ -->
+  <section class="view" id="view-history">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">SCAN HISTORY LOG</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="history-filter" class="filter-input" placeholder="Filter by URL or classification...">
+          <button class="btn-mini" onclick="clearHistory()">CLEAR</button>
+        </div>
+      </div>
+      <table class="scan-table">
+        <thead><tr><th>SCAN ID</th><th>URL</th><th>RISK</th><th>CLASSIFICATION</th><th>CONFIDENCE</th><th>TIMESTAMP</th><th>ACTIONS</th></tr></thead>
+        <tbody id="history-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══ ANALYTICS ═══ -->
+  <section class="view" id="view-analytics">
+    <div class="analytics-grid">
+      <div class="panel"><div class="panel-header"><span class="panel-title">RISK SCORE DISTRIBUTION</span></div><canvas id="bar-chart" width="400" height="280" style="padding:16px;"></canvas></div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">THREAT INTELLIGENCE SOURCES</span></div>
+        <div class="ti-grid">
+          <div class="ti-card active"><div class="ti-logo">ML</div><div class="ti-name">ML Ensemble</div><div class="ti-desc">Random Forest + Gradient Boosting on 38 PhishUSIIL features</div><div class="ti-status active">● ACTIVE</div></div>
+          <div class="ti-card"><div class="ti-logo">VT</div><div class="ti-name">VirusTotal</div><div class="ti-desc">70+ antivirus engines & URL scanners</div><div class="ti-status">Set VIRUSTOTAL_API_KEY</div></div>
+          <div class="ti-card"><div class="ti-logo">GSB</div><div class="ti-name">Google Safe Browsing</div><div class="ti-desc">Real-time threat database by Google</div><div class="ti-status">Set GOOGLE_SAFE_BROWSING_KEY</div></div>
+          <div class="ti-card"><div class="ti-logo">PT</div><div class="ti-name">PhishTank</div><div class="ti-desc">Community phishing URL database</div><div class="ti-status active">● ACTIVE (no key needed)</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ API REFERENCE ═══ -->
+  <section class="view" id="view-api">
+    <div class="api-docs"><div class="panel"><div class="panel-header"><span class="panel-title">REST API REFERENCE — v5.0</span></div>
+    <div class="api-content">
+      <div class="api-endpoint"><div class="endpoint-header"><span class="method post">POST</span><span class="endpoint-path">/api/scan</span><span class="endpoint-desc">Scan a single URL</span></div><pre class="code-block">{ "url": "https://suspicious.xyz/login", "check_ssl": true, "check_content": true, "check_threat_intel": true }</pre></div>
+      <div class="api-endpoint"><div class="endpoint-header"><span class="method post">POST</span><span class="endpoint-path">/api/scan/bulk</span><span class="endpoint-desc">Scan up to 50 URLs</span></div><pre class="code-block">{ "urls": ["https://url1.com", "https://url2.com"] }</pre></div>
+      <div class="api-endpoint"><div class="endpoint-header"><span class="method post">POST</span><span class="endpoint-path">/api/scan/file</span><span class="endpoint-desc">Upload .txt/.csv file (multipart/form-data, field: 'file')</span></div></div>
+      <div class="api-endpoint"><div class="endpoint-header"><span class="method post">POST</span><span class="endpoint-path">/api/email/scan</span><span class="endpoint-desc">Scan URLs extracted from email</span></div><pre class="code-block">{ "body": "email body text...", "subject": "URGENT", "sender": "noreply@evil.tk" }</pre></div>
+      <div class="api-endpoint"><div class="endpoint-header"><span class="method get">GET</span><span class="endpoint-path">/api/report/&lt;scan_id&gt;</span><span class="endpoint-desc">Download PDF report</span></div></div>
+      <div class="api-endpoint"><div class="endpoint-header"><span class="method get">GET</span><span class="endpoint-path">/api/watchlist</span><span class="endpoint-desc">Get monitored domains</span></div></div>
+      <div class="api-endpoint"><div class="endpoint-header"><span class="method post">POST</span><span class="endpoint-path">/api/watchlist</span><span class="endpoint-desc">Add to watchlist</span></div><pre class="code-block">{ "url": "https://domain.com", "interval_minutes": 60 }</pre></div>
+      <div class="api-endpoint"><div class="endpoint-header"><span class="method get">GET</span><span class="endpoint-path">/api/history</span><span class="endpoint-desc">Scan history</span></div><pre class="code-block">?limit=50&offset=0</pre></div>
+      <div class="api-endpoint"><div class="endpoint-header"><span class="method get">GET</span><span class="endpoint-path">/api/dashboard</span><span class="endpoint-desc">Full dashboard data</span></div></div>
+      <div class="api-endpoint"><div class="endpoint-header"><span class="method get">GET</span><span class="endpoint-path">/api/health</span><span class="endpoint-desc">Health check</span></div></div>
+      <div class="response-example">
+        <div class="panel-header"><span class="panel-title">SAMPLE SCAN RESPONSE</span></div>
+        <pre class="code-block">{
+  "scan_id": "A3F9B2C1",
+  "url": "https://paypa1-login.verify.tk/account",
+  "risk_score": 80.0,
+  "risk_level": "CRITICAL",
+  "classification": "CONFIRMED_PHISHING",
+  "confidence": 97.2,
+  "recommendation": "DO NOT VISIT — Confirmed phishing site",
+  "indicators": [
+    { "source": "URL Analysis", "check": "Brand Spoofing / Typosquatting",
+      "detail": "Domain resembles PayPal (similarity: 95%)", "severity": 40 }
+  ],
+  "checks": {
+    "ml_detection": {
+      "score": 100.0, "phishing_probability": 1.0,
+      "rf_probability": 1.0, "gb_probability": 1.0,
+      "top_features": [
+        { "feature": "tld_is_phishing", "value": 1, "importance": 0.151 }
+      ]
+    },
+    "url_analysis": { "score": 60, "trusted_tld": false, "real_brand": false },
+    "ssl_inspection": { "score": 0 },
+    "domain_intelligence": { "score": 15 },
+    "content_analysis": { "score": 35 },
+    "threat_intelligence": { "score": 0 }
+  },
+  "scan_duration_ms": 980.3
+}</pre>
+      </div>
+    </div></div></div>
+  </section>
+
+</main>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal" style="display:none;" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
