@@ -5,7 +5,6 @@
 
 const API_BASE = 'http://localhost:8000';
 
-// ── Connection ───────────────────────────────────────────────────────────────
 let backendOnline = false;
 
 async function checkBackend() {
@@ -29,7 +28,6 @@ async function checkBackend() {
 checkBackend();
 setInterval(checkBackend, 10000);
 
-// ── Router ────────────────────────────────────────────────────────────────────
 function navigate(view) {
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -54,14 +52,12 @@ function navigate(view) {
 document.querySelectorAll('.nav-item').forEach(btn =>
   btn.addEventListener('click', () => navigate(btn.dataset.view)));
 
-// ── Clock ─────────────────────────────────────────────────────────────────────
 function updateClock() {
   const el = document.getElementById('clock');
   if (el) el.textContent = new Date().toUTCString().replace(' GMT',' UTC');
 }
 setInterval(updateClock, 1000); updateClock();
 
-// ── API helper ────────────────────────────────────────────────────────────────
 async function api(path, options = {}) {
   try {
     const res = await fetch(API_BASE + path, {
@@ -72,7 +68,6 @@ async function api(path, options = {}) {
   } catch (e) { console.warn('API:', path, e.message); return null; }
 }
 
-// ── Dashboard ─────────────────────────────────────────────────────────────────
 async function loadDashboard() {
   const data = await api('/api/dashboard');
   if (!data) { renderDemoData(); return; }
@@ -161,7 +156,6 @@ function renderDemoData() {
   renderRingChart({CONFIRMED_PHISHING:14,LIKELY_PHISHING:4,SUSPICIOUS:7,LIKELY_SAFE:17});
 }
 
-// ── URL Scanner ───────────────────────────────────────────────────────────────
 function setUrl(url) { const el=document.getElementById('url-input'); if(el) el.value=url; }
 let scanInProgress=false;
 
@@ -249,7 +243,6 @@ function renderScanResult(r) {
     return `<div class="indicator-card"><div class="ind-sev ${sevClass}">${sev}</div><div class="ind-body"><div class="ind-check">${escHtml(ind.check||'')}</div><div class="ind-detail">${escHtml(ind.detail||'')}</div><div class="ind-source">SOURCE: ${escHtml(ind.source||'')}</div></div></div>`;
   }).join('');
 
-  // PDF download button
   const pdfBtn=`<button class="btn-mini" onclick="downloadReport('${r.scan_id}')" style="background:rgba(255,45,85,0.1);color:var(--red);border-color:rgba(255,45,85,0.3)">⬇ PDF REPORT</button>`;
 
   el.innerHTML=`
@@ -307,12 +300,10 @@ function flashInput() {
 
 document.getElementById('url-input')?.addEventListener('keydown', e=>{ if(e.key==='Enter') startScan(); });
 
-// ── PDF Download ──────────────────────────────────────────────────────────────
 function downloadReport(scanId) {
   window.open(`${API_BASE}/api/report/${scanId}`, '_blank');
 }
 
-// ── Bulk Scanner ──────────────────────────────────────────────────────────────
 async function startBulkScan() {
   const fileInput=document.getElementById('bulk-file');
   const file=fileInput?.files[0];
@@ -365,7 +356,6 @@ function renderBulkResults(data) {
     </div>`;
 }
 
-// ── Email Scanner ─────────────────────────────────────────────────────────────
 async function startEmailScan() {
   const body    = document.getElementById('email-body')?.value?.trim();
   const subject = document.getElementById('email-subject')?.value?.trim();
@@ -416,7 +406,6 @@ function renderEmailResults(data) {
     <table class="scan-table"><thead><tr><th>URL</th><th>SCORE</th><th>CLASSIFICATION</th><th>REPORT</th></tr></thead><tbody>${urlRows}</tbody></table>`:''}`;
 }
 
-// ── Watchlist ─────────────────────────────────────────────────────────────────
 async function loadWatchlist() {
   const data=await api('/api/watchlist');
   renderWatchlist(data?.watchlist||[]);
@@ -472,7 +461,6 @@ function renderWatchlistResults(results) {
     </tbody></table>`;
 }
 
-// ── History ───────────────────────────────────────────────────────────────────
 let historyData=[];
 async function loadHistory() {
   const data=await api('/api/history?limit=100');
@@ -506,7 +494,6 @@ async function clearHistory() {
   await api('/api/history',{method:'DELETE'}); historyData=[]; renderHistoryTable([]);
 }
 
-// ── Detail Modal ──────────────────────────────────────────────────────────────
 function showScanDetail(scanId, data) {
   const modal=document.getElementById('modal'), content=document.getElementById('modal-content');
   if(!modal||!content) return; modal.style.display='flex';
@@ -533,7 +520,6 @@ function showScanDetail(scanId, data) {
 }
 function closeModal(e) { if(!e||e.target===document.getElementById('modal')) document.getElementById('modal').style.display='none'; }
 
-// ── Analytics ─────────────────────────────────────────────────────────────────
 let analyticsLoaded=false;
 async function loadAnalytics() {
   if(analyticsLoaded) return; analyticsLoaded=true;
@@ -557,7 +543,6 @@ function renderBarChart(dist) {
   });
 }
 
-// ── Utilities ─────────────────────────────────────────────────────────────────
 function riskBadge(score,level) {
   const cls={MINIMAL:'minimal',LOW:'low',MEDIUM:'medium',HIGH:'high',CRITICAL:'critical'}[level]||'low';
   return `<span class="risk-badge risk-${cls}">${typeof score==='number'?score.toFixed(1):score||0}</span>`;
