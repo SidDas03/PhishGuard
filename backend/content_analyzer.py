@@ -13,7 +13,6 @@ from url_analyzer import extract_domain_parts, is_trusted_tld
 
 requests.packages.urllib3.disable_warnings()
 
-# Brands and their domain roots - used to skip false positives
 BRAND_DOMAINS = {
     "paypal": ["paypal.com"],
     "amazon": ["amazon.com","amazon.co.uk","amazon.in","amazon.de","aws.amazon.com"],
@@ -83,7 +82,6 @@ class ContentAnalyzer:
             ]
             for chk in checks:
                 if chk.get("flagged"):
-                    # Halve ALL scores for trusted TLDs
                     if trusted:
                         chk["severity"] = chk.get("severity", 0) // 2
                     findings.append(chk)
@@ -140,22 +138,18 @@ class ContentAnalyzer:
         html_lower = html.lower()
         title = (soup.title.string or "").lower() if soup.title else ""
         img_srcs = [img.get("src","").lower() for img in soup.find_all("img")]
-
-        # Check if there's actually a login form — impersonation without login is much weaker
         has_login = any(
             inp.get("type","").lower() == "password"
             for inp in soup.find_all("input")
         )
 
         for brand, indicators in BRAND_INDICATORS.items():
-            # Skip if this IS the real brand's domain
             brand_owned_domains = BRAND_DOMAINS.get(brand, [])
             is_real = any(actual_fqdn == d or actual_fqdn.endswith("."+d)
                          for d in brand_owned_domains)
             if is_real:
                 continue
 
-            # Skip if brand name is part of the actual domain
             if brand in actual_domain:
                 continue
 
@@ -163,17 +157,14 @@ class ContentAnalyzer:
             in_title = any(ind in title for ind in indicators)
             in_img_src = any(any(ind in s for ind in indicators) for s in img_srcs)
 
-            # For trusted TLDs: require MUCH stronger evidence
             if trusted:
-                # Educational pages about phishing mention brands legitimately
-                # Only flag if: brand is in page title AND login form present
+
                 if in_title and has_login and mentions > 20:
                     return {"flagged":True,"check":"Brand Impersonation Detected",
                             "detail":f"Page impersonates {brand.title()} (domain: '{actual_domain}')",
-                            "severity":20}  # reduced severity for trusted TLD
+                            "severity":20} 
                 continue
 
-            # For normal domains: require either title match OR (high mentions AND login form)
             if in_title and has_login:
                 return {"flagged":True,"check":"Brand Impersonation Detected",
                         "detail":f"Page impersonates {brand.title()} (domain: '{actual_domain}')",
@@ -191,7 +182,6 @@ class ContentAnalyzer:
 
     def _check_suspicious_js(self, html, trusted):
         matches = [desc for pat,desc in SUSPICIOUS_JS if re.search(pat, html, re.I)]
-        # Trusted domains (edu/gov) commonly use redirects and cookies legitimately
         threshold = 4 if trusted else 3
         if len(matches) >= threshold:
             return {"flagged":True,"check":"Multiple Suspicious JS Patterns",
